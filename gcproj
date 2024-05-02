@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# gcproj is a utility to manage and switch between gcloud projects.
+
+set -eou pipefail
+IFS=$'\n\t'
+
+usage() {
+	cat <<"EOF"
+  USAGE:
+    gcproj              : list gcloud projects
+    gcproj <PROJECT_ID> : switch to gcloud project <PROJECT_ID>
+    gcproj -h, --help   : show this message
+EOF
+}
+
+current_project() {
+	gcloud config get project | head -n 1
+}
+
+list_projects() {
+	gcloud projects list
+}
+
+set_project() {
+	gcloud config set project "${1}"
+}
+
+choose_project_fzf() {
+	local choice="$(list_projects | sed 1d | fzf)"
+	local selected="$(echo $choice | awk '{print $1}')"
+	if [[ -z $selected ]]; then
+		echo "error: no project selected"
+		exit 0
+	fi
+	set_project $selected
+}
+
+main() {
+	if ! hash gcloud 2>/dev/null; then
+		echo >&2 "gcloud is not installed"
+		exit 1
+	fi
+
+	if [[ "$#" -eq 0 ]]; then
+		if hash fzf 2>/dev/null; then
+			choose_project_fzf
+		else
+			list_projects
+		fi
+	elif [[ "$#" -eq 1 ]]; then
+		if [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
+			usage
+		else
+			set_project "${1}"
+		fi
+	fi
+}
+
+main "$@"
