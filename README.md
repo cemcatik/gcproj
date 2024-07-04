@@ -33,6 +33,22 @@ $ gcproj foo-1234
 Updated property [core/project].
 ```
 
+### Caching
+
+Getting the list of projects, even for accounts with a small list of projects,
+takes significant amount of time. In order to help with startup times, `gcproj`
+caches the list of projects. By default, the cache is refreshed once a day.
+
+The cache is stored in `$XDG_CACHE_HOME/gcproj/projects` file. If `$XDG_CACHE_HOME`
+is not defined, then the cache is stored in `$HOME/.cache/gcproj/projects`.
+
+The projects list is refreshed if the cache is stale. By default, the cache is
+valid for 1 day. The cache TTL can be configured with the `$GCPROJ_CACHE_TTL`,
+environment variable. The value of `$GCPROJ_CACHE_TTL` is in seconds, defaults
+to 1 day, aka `86400` seconds.
+
+The cache can be refreshed with the `--refresh` flag.
+
 ## Installation
 
 Incldue `gcproj` in your `$PATH`.
@@ -49,3 +65,4 @@ interactively select a project or fuzzy-search.
 - [ ] Add gif for fzf/interactive mode to README
 - [ ] Switch to previous project `gcproj -`
 - [ ] Ignore `fzf`
+- [x] ~~Cache list of projects to improve startup time~~
