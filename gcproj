@@ -5,12 +5,16 @@
 set -eou pipefail
 IFS=$'\n\t'
 
+CACHE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}"/gcproj/cache
+CACHE_TTL=${GCPROJ_CACHE_TTL:-86400}
+
 usage() {
 	cat <<"EOF"
   USAGE:
-    gcproj              : list gcloud projects
-    gcproj <PROJECT_ID> : switch to gcloud project <PROJECT_ID>
-    gcproj -h, --help   : show this message
+    gcproj               : list gcloud projects
+    gcproj -r, --refresh : refresh gcproj cache and list
+    gcproj <PROJECT_ID>  : switch to gcloud project <PROJECT_ID>
+    gcproj -h, --help    : show this message
 EOF
 }
 
@@ -19,7 +23,27 @@ current_project() {
 }
 
 list_projects() {
-	gcloud projects list
+	refresh_if_stale
+	list_from_cache
+}
+
+refresh_if_stale() {
+	local cached_at=$(stat -f %m $CACHE_FILE)
+	local now=$(date +%s)
+	local threshold=$((now - CACHE_TTL))
+	if [[ $cached_at -lt $threshold ]]; then
+		refresh
+	fi
+}
+
+refresh() {
+	local projects="$(gcloud projects list)"
+	mkdir -p $(dirname $CACHE_FILE)
+	echo "$projects" >$CACHE_FILE
+}
+
+list_from_cache() {
+	cat $CACHE_FILE
 }
 
 set_project() {
@@ -36,6 +60,14 @@ choose_project_fzf() {
 	set_project $selected
 }
 
+list() {
+	if hash fzf 2>/dev/null; then
+		choose_project_fzf
+	else
+		list_projects
+	fi
+}
+
 main() {
 	if ! hash gcloud 2>/dev/null; then
 		echo >&2 "gcloud is not installed"
@@ -43,14 +75,13 @@ main() {
 	fi
 
 	if [[ "$#" -eq 0 ]]; then
-		if hash fzf 2>/dev/null; then
-			choose_project_fzf
-		else
-			list_projects
-		fi
+		list
 	elif [[ "$#" -eq 1 ]]; then
 		if [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
 			usage
+		elif [[ "${1}" == '-r' || "${1}" == '--refresh' ]]; then
+			refresh
+			list
 		else
 			set_project "${1}"
 		fi
