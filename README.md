@@ -65,4 +65,5 @@ interactively select a project or fuzzy-search.
 - [ ] Add gif for fzf/interactive mode to README
 - [ ] Switch to previous project `gcproj -`
 - [ ] Ignore `fzf`
+- [ ] CI and automate linting etc
 - [x] ~~Cache list of projects to improve startup time~~

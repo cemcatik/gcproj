@@ -28,22 +28,24 @@ list_projects() {
 }
 
 refresh_if_stale() {
-	local cached_at=$(stat -f %m $CACHE_FILE)
-	local now=$(date +%s)
-	local threshold=$((now - CACHE_TTL))
+	local -r cached_at=$(stat -f %m "$CACHE_FILE")
+	local -r now=$(date +%s)
+	local -r threshold=$((now - CACHE_TTL))
+
 	if [[ $cached_at -lt $threshold ]]; then
 		refresh
 	fi
 }
 
 refresh() {
-	local projects="$(gcloud projects list)"
-	mkdir -p $(dirname $CACHE_FILE)
-	echo "$projects" >$CACHE_FILE
+	local -r projects="$(gcloud projects list)"
+	local -r cache_dir=$(dirname "$CACHE_FILE")
+	mkdir -p "$cache_dir"
+	echo "$projects" >"$CACHE_FILE"
 }
 
 list_from_cache() {
-	cat $CACHE_FILE
+	cat "$CACHE_FILE"
 }
 
 set_project() {
@@ -51,13 +53,15 @@ set_project() {
 }
 
 choose_project_fzf() {
-	local choice="$(list_projects | sed 1d | fzf)"
-	local selected="$(echo $choice | awk '{print $1}')"
+	local -r choice="$(list_projects | sed 1d | fzf)"
+	local -r selected="$(echo "$choice" | awk '{print $1}')"
+
 	if [[ -z $selected ]]; then
 		echo "error: no project selected"
 		exit 0
 	fi
-	set_project $selected
+
+	set_project "$selected"
 }
 
 list() {
