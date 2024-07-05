@@ -24,9 +24,11 @@ current_project() {
 	gcloud config get project | head -n 1
 }
 
-list_projects() {
-	refresh_if_stale
-	list_from_cache
+refresh() {
+	local -r projects="$(gcloud projects list)"
+	local -r cache_dir=$(dirname "$CACHE_FILE")
+	mkdir -p "$cache_dir"
+	echo "$projects" >"$CACHE_FILE"
 }
 
 refresh_if_stale() {
@@ -48,25 +50,13 @@ refresh_if_stale() {
 	fi
 }
 
-refresh() {
-	local -r projects="$(gcloud projects list)"
-	local -r cache_dir=$(dirname "$CACHE_FILE")
-	mkdir -p "$cache_dir"
-	echo "$projects" >"$CACHE_FILE"
-}
-
 list_from_cache() {
 	cat "$CACHE_FILE"
 }
 
-set_project() {
-	local -r prev="$(current_project)"
-
-	gcloud config set project "${1}"
-
-	if [[ "${prev}" != "${1}" ]]; then
-		save_previous "${prev}"
-	fi
+list_projects() {
+	refresh_if_stale
+	list_from_cache
 }
 
 read_previous() {
@@ -79,6 +69,16 @@ save_previous() {
 	local -r currentPrev=$(read_previous)
 	if [[ "${currentPrev}" != "${1}" ]]; then
 		echo "${1}" >"${PREV_FILE}"
+	fi
+}
+
+set_project() {
+	local -r prev="$(current_project)"
+
+	gcloud config set project "${1}"
+
+	if [[ "${prev}" != "${1}" ]]; then
+		save_previous "${prev}"
 	fi
 }
 
