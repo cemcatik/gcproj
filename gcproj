@@ -28,11 +28,20 @@ list_projects() {
 }
 
 refresh_if_stale() {
-	local -r cached_at=$(stat -f %m "$CACHE_FILE")
-	local -r now=$(date +%s)
-	local -r threshold=$((now - CACHE_TTL))
+	local should_refresh
+	should_refresh=true
 
-	if [[ $cached_at -lt $threshold ]]; then
+	if [ -e "$CACHE_FILE" ]; then
+		local -r cached_at=$(stat -f %m "$CACHE_FILE")
+		local -r now=$(date +%s)
+		local -r threshold=$((now - CACHE_TTL))
+
+		if [[ $cached_at -gt $threshold ]]; then
+			should_refresh=false
+		fi
+	fi
+
+	if $should_refresh; then
 		refresh
 	fi
 }
