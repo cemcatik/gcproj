@@ -7,6 +7,7 @@ IFS=$'\n\t'
 
 CACHE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}"/gcproj/cache
 CACHE_TTL=${GCPROJ_CACHE_TTL:-86400}
+PREV_FILE="${XDG_CACHE_HOME:-$HOME/.cache}"/gcproj/previous
 
 usage() {
 	cat <<"EOF"
@@ -14,6 +15,7 @@ usage() {
     gcproj               : list gcloud projects
     gcproj -r, --refresh : refresh gcproj cache and list
     gcproj <PROJECT_ID>  : switch to gcloud project <PROJECT_ID>
+    gcproj -             : switch to previous project
     gcproj -h, --help    : show this message
 EOF
 }
@@ -58,7 +60,33 @@ list_from_cache() {
 }
 
 set_project() {
+	local -r prev="$(current_project)"
+
 	gcloud config set project "${1}"
+
+	if [[ "${prev}" != "${1}" ]]; then
+		save_previous "${prev}"
+	fi
+}
+
+read_previous() {
+	if [ -e "$PREV_FILE" ]; then
+		cat "$PREV_FILE"
+	fi
+}
+
+save_previous() {
+	local -r currentPrev=$(read_previous)
+	if [[ "${currentPrev}" != "${1}" ]]; then
+		echo "${1}" >"${PREV_FILE}"
+	fi
+}
+
+swap_project() {
+	if [ -e "$PREV_FILE" ]; then
+		local -r prev="$(read_previous)"
+		set_project "${prev}"
+	fi
 }
 
 choose_project_fzf() {
@@ -95,6 +123,8 @@ main() {
 		elif [[ "${1}" == '-r' || "${1}" == '--refresh' ]]; then
 			refresh
 			list
+		elif [[ "${1}" == '-' ]]; then
+			swap_project
 		else
 			set_project "${1}"
 		fi
