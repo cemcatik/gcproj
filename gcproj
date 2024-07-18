@@ -16,6 +16,7 @@ usage() {
     gcproj -r, --refresh : refresh gcproj cache and list
     gcproj <PROJECT_ID>  : switch to gcloud project <PROJECT_ID>
     gcproj -             : switch to previous project
+    gcproj -c, --current : show current gcloud project
     gcproj -h, --help    : show this message
 EOF
 }
@@ -123,6 +124,8 @@ main() {
 		elif [[ "${1}" == '-r' || "${1}" == '--refresh' ]]; then
 			refresh
 			list
+		elif [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
+			current_project
 		elif [[ "${1}" == '-' ]]; then
 			swap_project
 		else
